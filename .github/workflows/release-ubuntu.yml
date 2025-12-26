@@ -1,0 +1,51 @@
+name: Release (ubuntu-latest)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: Release tag (e.g., slang-ubuntu-2025-01-01)
+        required: true
+      release_name:
+        description: Release title
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DSLANG_INCLUDE_TESTS=OFF \
+            -DSLANG_INCLUDE_DOCS=OFF \
+            -DSLANG_INCLUDE_PYLIB=OFF \
+            -DSLANG_INCLUDE_TOOLS=OFF \
+            -DSLANG_INCLUDE_INSTALL=ON
+      - name: Build
+        run: cmake --build build -j$(nproc)
+      - name: Install
+        run: |
+          cmake --install build --prefix package
+          cp LICENSE package/
+          if [ -d LICENSES ]; then
+            cp -r LICENSES package/
+          fi
+      - name: Pack
+        run: |
+          tar -czf slang-ubuntu-latest.tar.gz -C package .
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag_name }}
+          name: ${{ inputs.release_name }}
+          files: slang-ubuntu-latest.tar.gz
