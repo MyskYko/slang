@@ -36,6 +36,7 @@ jobs:
       - name: Install
         run: |
           cmake --install build --prefix package
+          sed -i 's/\\$<\\$<CONFIG:Debug>:SLANG_DEBUG>;//' package/lib/cmake/slang/slangTargets.cmake
           cp LICENSE package/
           if [ -d LICENSES ]; then
             cp -r LICENSES package/
